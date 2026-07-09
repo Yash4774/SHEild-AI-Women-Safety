@@ -1,6 +1,5 @@
-import * as helpers from './helpers';
+import { SomethingElse } from './helpers';
 
 export default function Page() {
-  const Widget = helpers.DoesNotExist;
-  return <div>{Widget()}</div>;
+  return <div>{SomethingElse()}</div>;
 }
