@@ -34,8 +34,9 @@ SHEild AI is built with a mobile-first approach, ensuring that critical safety f
 
 ## Vercel deployment
 
-Import the repository in Vercel and deploy from the repository root. The
-included `vercel.json` builds `apps/web` with the React Router adapter.
+Import the repository in Vercel and set the project Root Directory to
+`apps/web`. The included `vercel.json` uses the React Router adapter and
+handles dependency installation and production builds.
 
 Set these variables for the Production, Preview, and Development environments:
 
