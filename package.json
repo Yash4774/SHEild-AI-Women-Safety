@@ -1,0 +1,11 @@
+{
+  "name": "sheild-ai",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

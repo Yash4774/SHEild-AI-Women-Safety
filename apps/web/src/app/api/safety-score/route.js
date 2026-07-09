@@ -73,9 +73,11 @@ export async function POST(request) {
       return r.danger_level === "medium";
     }).length;
 
-    const baseUrl = process.env.NEXT_PUBLIC_CREATE_APP_URL;
-    if (!baseUrl) {
-      console.warn("NEXT_PUBLIC_CREATE_APP_URL not set");
+    const baseUrl =
+      process.env.CREATE_APP_URL || process.env.NEXT_PUBLIC_CREATE_APP_URL;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!baseUrl && !geminiKey) {
+      console.warn("No AI provider configured; using local safety model");
       return Response.json(buildFallback(destination));
     }
 
@@ -123,9 +125,25 @@ export async function POST(request) {
       "- reason: 1-2 sentences explaining WHY this exact score\n\n" +
       "Return ONLY a JSON object, no markdown.";
 
-    const response = await fetch(
-      baseUrl + "/integrations/google-gemini-2-5-pro/",
-      {
+    const response = geminiKey
+      ? await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": geminiKey,
+            },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.2,
+              },
+            }),
+          },
+        )
+      : await fetch(baseUrl + "/integrations/google-gemini-2-5-pro/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -162,8 +180,7 @@ export async function POST(request) {
             },
           },
         }),
-      },
-    );
+      });
 
     if (!response.ok) {
       console.error("AI API returned " + response.status);
@@ -171,12 +188,11 @@ export async function POST(request) {
     }
 
     const data = await response.json();
-    const rawContent =
-      data &&
-      data.choices &&
-      data.choices[0] &&
-      data.choices[0].message &&
-      data.choices[0].message.content;
+    const rawContent = geminiKey
+      ? data?.candidates?.[0]?.content?.parts
+          ?.map((part) => part.text || "")
+          .join("")
+      : data?.choices?.[0]?.message?.content;
 
     const result = tryParseJson(rawContent);
     if (!result || typeof result.score !== "number" || !result.risk_level) {

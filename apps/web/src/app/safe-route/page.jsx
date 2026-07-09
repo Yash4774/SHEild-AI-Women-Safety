@@ -31,6 +31,15 @@ const TRAVEL_MODES = [
   { id: "BICYCLING", label: "Bike", icon: Bike },
 ];
 
+function MapsProvider({ apiKey, children }) {
+  if (!apiKey) return children;
+  return (
+    <APIProvider apiKey={apiKey} libraries={["places", "routes"]}>
+      {children}
+    </APIProvider>
+  );
+}
+
 // Places autocomplete
 function DestinationInput({ value, onChange, onSelect, placeholder }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -71,6 +80,12 @@ function DestinationInput({ value, onChange, onSelect, placeholder }) {
         }}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && value.trim()) {
+            onSelect(value.trim());
+            setOpen(false);
+          }
+        }}
         placeholder={placeholder}
         style={{
           width: "100%",
@@ -214,6 +229,7 @@ export default function SafeRoutePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState(null);
   const [activeRoute, setActiveRoute] = useState(null);
+  const mapsApiKey = import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -233,7 +249,7 @@ export default function SafeRoutePage() {
   const findRoute = async () => {
     const dest = destConfirmed || destInput.trim();
     if (!dest) {
-      setError("Please search and select a destination from the suggestions.");
+      setError("Please enter a destination.");
       return;
     }
     setError(null);
@@ -295,10 +311,7 @@ export default function SafeRoutePage() {
 
   return (
     <AppShell activePage="safe-route">
-      <APIProvider
-        apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
-        libraries={["places", "routes"]}
-      >
+      <MapsProvider apiKey={mapsApiKey}>
         <div
           style={{
             display: "flex",
@@ -492,8 +505,9 @@ export default function SafeRoutePage() {
 
           {/* Map area */}
           <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-            <div style={{ flex: 1, position: "relative" }}>
-              <GMap
+            <div style={{ flex: 1, position: "relative", minHeight: 360 }}>
+              {mapsApiKey ? (
+                <GMap
                 style={{ width: "100%", height: "100%" }}
                 defaultCenter={currentPos}
                 defaultZoom={13}
@@ -511,7 +525,54 @@ export default function SafeRoutePage() {
                     onResult={setRouteResult}
                   />
                 )}
-              </GMap>
+                </GMap>
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "grid",
+                    placeItems: "center",
+                    padding: 24,
+                    boxSizing: "border-box",
+                    background:
+                      "radial-gradient(circle at center, rgba(124,58,237,.16), transparent 55%), var(--bg2)",
+                  }}
+                >
+                  <div style={{ maxWidth: 440, textAlign: "center" }}>
+                    <Map size={42} color="#a78bfa" style={{ margin: "0 auto 12px" }} />
+                    <div style={{ color: t1, fontWeight: 800, fontSize: 18 }}>
+                      Route planning is ready
+                    </div>
+                    <p style={{ color: t2, fontSize: 13, lineHeight: 1.6 }}>
+                      Enter any destination to get a safety score. Add
+                      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in Vercel to enable the
+                      interactive map and turn-by-turn route preview.
+                    </p>
+                    {activeRoute && (
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeRoute.origin)}&destination=${encodeURIComponent(activeRoute.destination)}&travelmode=${travelMode.toLowerCase()}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 7,
+                          padding: "10px 16px",
+                          borderRadius: 10,
+                          background: "#7c3aed",
+                          color: "#fff",
+                          textDecoration: "none",
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <Navigation size={14} /> Open directions
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {!activeRoute && !analyzing && (
                 <div
@@ -749,7 +810,7 @@ export default function SafeRoutePage() {
             )}
           </div>
         </div>
-      </APIProvider>
+      </MapsProvider>
       <style>{`
         @keyframes srPulse{0%,100%{opacity:1}50%{opacity:0.4}}
         @keyframes srSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}

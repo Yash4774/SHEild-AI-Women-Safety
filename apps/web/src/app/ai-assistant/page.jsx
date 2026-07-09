@@ -140,8 +140,8 @@ export default function AIAssistantPage() {
           userMsg,
         ];
 
-        // ✅ Call Gemini directly from frontend — most reliable approach
-        const res = await fetch("/integrations/google-gemini-2-5-flash/", {
+        // Keep provider credentials and provider-specific URLs on the server.
+        const res = await fetch("/api/ai-chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages: contextMessages, stream: false }),
@@ -152,17 +152,10 @@ export default function AIAssistantPage() {
         }
 
         const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content;
+        const reply = data?.reply;
         if (!reply) throw new Error("Empty response received from AI.");
 
         setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-
-        // Non-blocking: save session to backend for analytics
-        fetch("/api/ai-chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [userMsg], saveOnly: true }),
-        }).catch(() => {});
       } catch (err) {
         console.error("AI chat error:", err);
         setError(

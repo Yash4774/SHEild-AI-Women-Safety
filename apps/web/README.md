@@ -31,3 +31,18 @@ SHEild AI is a premium, hackathon-ready safety platform designed specifically fo
 
 ## 🛡️ Safety First
 SHEild AI is built with a mobile-first approach, ensuring that critical safety features are always just a tap away.
+
+## Vercel deployment
+
+Import the repository in Vercel and deploy from the repository root. The
+included `vercel.json` builds `apps/web` with the React Router adapter.
+
+Set these variables for the Production, Preview, and Development environments:
+
+- `GEMINI_API_KEY` — server-only Google AI Studio key used by the assistant and
+  safety scoring.
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — browser-restricted Maps key with Maps
+  JavaScript, Places, and Directions enabled.
+
+The safe-route page still produces a local, time-aware score and links to
+directions if the Maps key is missing.

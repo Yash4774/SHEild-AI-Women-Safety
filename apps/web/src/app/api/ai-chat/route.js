@@ -26,7 +26,12 @@ Guidelines:
 
 export async function POST(request) {
   try {
-    const session = await auth();
+    let session = null;
+    try {
+      session = await auth();
+    } catch (authError) {
+      console.warn("Auth unavailable for AI chat:", authError.message);
+    }
     const body = await request.json();
     const { messages, saveOnly } = body;
 
@@ -54,16 +59,7 @@ export async function POST(request) {
       return Response.json({ success: true });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_CREATE_APP_URL;
-    if (!baseUrl) {
-      return Response.json(
-        { error: "AI service not configured" },
-        { status: 503 },
-      );
-    }
-
-    // Build payload with system prompt prepended
-    const payload = {
+    const createPayload = {
       messages: [
         { role: "user", content: SYSTEM_PROMPT },
         {
@@ -76,36 +72,69 @@ export async function POST(request) {
       stream: false,
     };
 
-    // Try Gemini 2.5 Flash first (faster), fallback to Pro
     let aiResponse = null;
-    const endpoints = [
-      "/integrations/google-gemini-2-5-flash/",
-      "/integrations/google-gemini-2-5-pro/",
-    ];
-
-    for (const endpoint of endpoints) {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
       try {
-        const res = await fetch(baseUrl + endpoint, {
+        const res = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+          {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": geminiKey,
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: messages.slice(-14).map((message) => ({
+              role: message.role === "assistant" ? "model" : "user",
+              parts: [{ text: String(message.content || "") }],
+            })),
+            generationConfig: { temperature: 0.35, maxOutputTokens: 1000 },
+          }),
+        },
+        );
         if (res.ok) {
           const data = await res.json();
-          const content = data?.choices?.[0]?.message?.content;
-          if (content) {
-            aiResponse = content;
-            break;
-          }
+          aiResponse = data?.candidates?.[0]?.content?.parts
+            ?.map((part) => part.text || "")
+            .join("")
+            .trim();
+        } else {
+          console.warn("Gemini API returned", res.status);
         }
       } catch (e) {
-        console.warn(`Endpoint ${endpoint} failed:`, e.message);
+        console.warn("Gemini API failed:", e.message);
+      }
+    }
+
+    // Backwards-compatible support for projects still hosted on Create.
+    const baseUrl = process.env.CREATE_APP_URL || process.env.NEXT_PUBLIC_CREATE_APP_URL;
+    if (!aiResponse && baseUrl) {
+      for (const endpoint of [
+        "/integrations/google-gemini-2-5-flash/",
+        "/integrations/google-gemini-2-5-pro/",
+      ]) {
+        try {
+          const res = await fetch(baseUrl + endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(createPayload),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            aiResponse = data?.choices?.[0]?.message?.content;
+            if (aiResponse) break;
+          }
+        } catch (e) {
+          console.warn(`Endpoint ${endpoint} failed:`, e.message);
+        }
       }
     }
 
     if (!aiResponse) {
       return Response.json(
-        { error: "AI service temporarily unavailable" },
+        { error: "AI assistant is not configured. Add GEMINI_API_KEY in Vercel." },
         { status: 503 },
       );
     }
