@@ -52,21 +52,23 @@ function getRequestWithForwardedHost(request: Request): Request {
   } as RequestInit & { duplex: 'half' });
 }
 
-api.all('/auth/:auth{.+}', async (c) => {
-  if (!isAuthAction(c.req.path)) {
-    return c.notFound();
-  }
+function registerAuthRoutes() {
+  api.all('/auth/:auth{.+}', async (c) => {
+    if (!isAuthAction(c.req.path)) {
+      return c.notFound();
+    }
 
-  const config = {
-    ...authConfig,
-    basePath: AUTH_BASENAME,
-    secret: authConfig.secret ?? process.env.AUTH_SECRET,
-  };
+    const config = {
+      ...authConfig,
+      basePath: AUTH_BASENAME,
+      secret: authConfig.secret ?? process.env.AUTH_SECRET,
+    };
 
-  setEnvDefaults(process.env, config);
+    setEnvDefaults(process.env, config);
 
-  return Auth(getRequestWithForwardedHost(c.req.raw), config);
-});
+    return Auth(getRequestWithForwardedHost(c.req.raw), config);
+  });
+}
 
 // Recursively find all route.js files
 async function findRouteFiles(dir: string): Promise<string[]> {
@@ -132,6 +134,7 @@ async function registerRoutes() {
 
   // Clear existing routes
   api.routes = [];
+  registerAuthRoutes();
 
   for (const routeFile of routeFiles) {
     try {
