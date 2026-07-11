@@ -16,6 +16,8 @@
       "account/signup/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "ai-assistant/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "analytics/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api/auth/error/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api/auth/session/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "checkin/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "dashboard/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "errors/async-effect-error/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -98,6 +100,24 @@
         "parentId": "root",
         "file": "src/app/analytics/page.jsx",
         "path": "analytics",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api/auth/error/page": {
+        "id": "api/auth/error/page",
+        "parentId": "root",
+        "file": "src/app/api/auth/error/page.jsx",
+        "path": "api/auth/error",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api/auth/session/page": {
+        "id": "api/auth/session/page",
+        "parentId": "root",
+        "file": "src/app/api/auth/session/page.jsx",
+        "path": "api/auth/session",
         "config": {
           "runtime": "nodejs"
         }
@@ -375,6 +395,18 @@
         "file": "./analytics/page.jsx",
         "path": "analytics"
       },
+      "api/auth/error/page": {
+        "id": "api/auth/error/page",
+        "parentId": "root",
+        "file": "./api/auth/error/page.jsx",
+        "path": "api/auth/error"
+      },
+      "api/auth/session/page": {
+        "id": "api/auth/session/page",
+        "parentId": "root",
+        "file": "./api/auth/session/page.jsx",
+        "path": "api/auth/session"
+      },
       "checkin/page": {
         "id": "checkin/page",
         "parentId": "root",
@@ -558,6 +590,14 @@
           {
             "file": "./analytics/page.jsx",
             "path": "analytics"
+          },
+          {
+            "file": "./api/auth/error/page.jsx",
+            "path": "api/auth/error"
+          },
+          {
+            "file": "./api/auth/session/page.jsx",
+            "path": "api/auth/session"
           },
           {
             "file": "./checkin/page.jsx",
