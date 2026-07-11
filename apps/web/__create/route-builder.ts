@@ -1,18 +1,72 @@
 import { readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Auth, setEnvDefaults } from '@auth/core';
 import { Hono } from 'hono';
 import type { Handler } from 'hono/types';
+import { authConfig } from '../src/auth';
 import updatedFetch from '../src/__create/fetch';
+import { isAuthAction } from './is-auth-action';
 
 const API_BASENAME = '/api';
 const api = new Hono();
+const AUTH_BASENAME = '/api/auth';
 
 // Get current directory
 const __dirname = join(fileURLToPath(new URL('.', import.meta.url)), '../src/app/api');
 if (globalThis.fetch) {
   globalThis.fetch = updatedFetch;
 }
+
+function getRequestWithForwardedHost(request: Request): Request {
+  const url = new URL(request.url);
+  const headers = new Headers(request.headers);
+  const forwardedProto = headers.get('x-forwarded-proto');
+  const forwardedHost = headers.get('x-forwarded-host') ?? headers.get('host');
+
+  if (forwardedProto) {
+    url.protocol = forwardedProto.endsWith(':') ? forwardedProto : `${forwardedProto}:`;
+  }
+
+  if (forwardedHost) {
+    url.host = forwardedHost;
+    headers.set('host', forwardedHost);
+    headers.delete('x-forwarded-host');
+  }
+
+  return new Request(url.href, {
+    body: request.body,
+    cache: request.cache,
+    credentials: request.credentials,
+    headers,
+    integrity: request.integrity,
+    keepalive: request.keepalive,
+    method: request.method,
+    mode: request.mode,
+    redirect: request.redirect,
+    referrer: request.referrer,
+    referrerPolicy: request.referrerPolicy,
+    signal: request.signal,
+    // Required by Node when forwarding a streamed request body.
+    duplex: 'half',
+  } as RequestInit & { duplex: 'half' });
+}
+
+api.all('/auth/:auth{.+}', async (c) => {
+  if (!isAuthAction(c.req.path)) {
+    return c.notFound();
+  }
+
+  const config = {
+    ...authConfig,
+    basePath: AUTH_BASENAME,
+    secret: authConfig.secret ?? process.env.AUTH_SECRET,
+  };
+
+  setEnvDefaults(process.env, config);
+
+  return Auth(getRequestWithForwardedHost(c.req.raw), config);
+});
 
 // Recursively find all route.js files
 async function findRouteFiles(dir: string): Promise<string[]> {

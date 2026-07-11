@@ -256,7 +256,20 @@ const pool = new Pool({
     });
 const adapter = Adapter(pool);
 
-export const { auth } = CreateAuth({
+export const authConfig = {
+  secret: process.env.AUTH_SECRET,
+  trustHost: true,
+  session: {
+    strategy: 'jwt',
+  },
+  callbacks: {
+    session({ session, token }) {
+      if (token?.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
   providers: [Credentials({
   id: 'credentials-signin',
   name: 'Credentials Sign in',
@@ -367,4 +380,6 @@ export const { auth } = CreateAuth({
     signIn: '/account/signin',
     signOut: '/account/logout',
   },
-})
+};
+
+export const { auth } = CreateAuth(authConfig)
