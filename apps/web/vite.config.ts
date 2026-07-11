@@ -14,8 +14,9 @@ import { restart } from './plugins/restart';
 import { restartEnvFileChange } from './plugins/restartEnvFileChange';
 
 export default defineConfig({
-  // Keep them available via import.meta.env.NEXT_PUBLIC_*
-  envPrefix: 'NEXT_PUBLIC_',
+  // Keep public browser env vars available via import.meta.env.
+  // GOOGLE_CLIENT_ID is safe to expose; never expose GOOGLE_CLIENT_SECRET.
+  envPrefix: ['NEXT_PUBLIC_', 'GOOGLE_CLIENT_ID'],
   optimizeDeps: {
     // Explicitly include fast-glob, since it gets dynamically imported and we
     // don't want that to cause a re-bundle.

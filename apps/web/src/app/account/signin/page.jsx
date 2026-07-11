@@ -15,11 +15,14 @@ function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const googleButtonRef = useRef(null);
+  const googleClientId =
+    import.meta.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+    import.meta.env.GOOGLE_CLIENT_ID;
 
   const { signInWithCredentials, signInWithGoogle } = useAuth();
 
   useEffect(() => {
-    const clientId = import.meta.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId = googleClientId;
 
     if (!clientId) {
       return;
@@ -81,7 +84,7 @@ function SignInPage() {
       script.onload = null;
       script.onerror = null;
     };
-  }, [signInWithGoogle]);
+  }, [googleClientId, signInWithGoogle]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -122,14 +125,15 @@ function SignInPage() {
         </div>
 
         <div className="mb-6">
-          {import.meta.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+          {googleClientId ? (
             <div
               ref={googleButtonRef}
               className="flex min-h-[44px] w-full items-center justify-center overflow-hidden rounded-xl"
             />
           ) : (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-300">
-              Google sign-in needs NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel.
+              Google sign-in needs GOOGLE_CLIENT_ID or
+              NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel.
             </div>
           )}
         </div>
