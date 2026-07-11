@@ -1,13 +1,87 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useAuth from "@/utils/useAuth";
+
+function decodeJwtPayload(token) {
+  const payload = token.split(".")[1];
+  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const decoded = atob(normalized);
+  const bytes = Uint8Array.from(decoded, (char) => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
 
 function SignInPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const googleButtonRef = useRef(null);
 
   const { signInWithCredentials, signInWithGoogle } = useAuth();
+
+  useEffect(() => {
+    const clientId = import.meta.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      return;
+    }
+
+    const initializeGoogle = () => {
+      if (!window.google?.accounts?.id || !googleButtonRef.current) return;
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async ({ credential }) => {
+          try {
+            if (!credential) {
+              throw new Error("Google did not return a credential.");
+            }
+
+            const profile = decodeJwtPayload(credential);
+
+            await signInWithGoogle({
+              email: profile.email,
+              name: profile.name,
+              image: profile.picture,
+              callbackUrl: "/dashboard",
+              redirect: true,
+            });
+          } catch (err) {
+            console.error(err);
+            setError("Google sign-in failed. Please try again.");
+          }
+        },
+      });
+
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: "filled_black",
+        size: "large",
+        type: "standard",
+        shape: "pill",
+        text: "continue_with",
+        width: googleButtonRef.current.offsetWidth || 320,
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeGoogle();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initializeGoogle;
+    script.onerror = () => {
+      setError("Could not load Google sign-in. Check your connection.");
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, [signInWithGoogle]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -33,17 +107,6 @@ function SignInPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle({
-        callbackUrl: "/dashboard",
-        redirect: true,
-      });
-    } catch (err) {
-      setError("Google sign-in failed.");
-    }
-  };
-
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#0a0a0c] p-4 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(236,72,153,0.1),transparent_50%)]" />
@@ -58,17 +121,18 @@ function SignInPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleGoogleSignIn}
-          className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-white/10 active:scale-[0.98]"
-        >
-          <img
-            src="https://www.google.com/favicon.ico"
-            className="h-4 w-4"
-            alt="Google"
-          />
-          Continue with Google
-        </button>
+        <div className="mb-6">
+          {import.meta.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+            <div
+              ref={googleButtonRef}
+              className="flex min-h-[44px] w-full items-center justify-center overflow-hidden rounded-xl"
+            />
+          ) : (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-300">
+              Google sign-in needs NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel.
+            </div>
+          )}
+        </div>
 
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">

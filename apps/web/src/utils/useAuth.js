@@ -58,9 +58,9 @@ function useAuth() {
 
   const signInWithGoogle = useCallback((options = {}) => {
     const user = buildUser({
-      email: "google.user@sheild.ai",
-      name: "Google User",
-      image: "https://www.google.com/favicon.ico",
+      email: options.email || "google.user@sheild.ai",
+      name: options.name || "Google User",
+      image: options.image || "https://www.google.com/favicon.ico",
     });
     saveUser(user);
     redirectTo(getCallbackUrl(options));
