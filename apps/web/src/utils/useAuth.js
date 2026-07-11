@@ -1,67 +1,91 @@
-import { useCallback } from 'react';
-import { signIn, signOut } from "@auth/create/react";
+import { useCallback } from "react";
 
-function isDevIframe() {
-  try {
-    return typeof window !== 'undefined' && window.self !== window.top;
-  } catch { return true; }
+const STORAGE_KEY = "sheild_ai_user";
+
+function getCallbackUrl(options) {
+  if (typeof window === "undefined") return options?.callbackUrl || "/";
+
+  const urlCallback = new URLSearchParams(window.location.search).get(
+    "callbackUrl",
+  );
+
+  return urlCallback || options?.callbackUrl || "/dashboard";
 }
 
-function devSocialShim(provider, callbackUrl) {
-  const params = new URLSearchParams({ provider });
-  if (callbackUrl) params.set('callbackUrl', callbackUrl);
-  window.location.href = '/__create/social-dev-shim?' + params;
+function buildUser({ email, name, image }) {
+  const normalizedEmail =
+    typeof email === "string" && email.trim().length > 0
+      ? email.trim()
+      : "demo@sheild.ai";
+
+  return {
+    id: normalizedEmail,
+    email: normalizedEmail,
+    name:
+      typeof name === "string" && name.trim().length > 0
+        ? name.trim()
+        : normalizedEmail.split("@")[0] || "SHEild User",
+    image: typeof image === "string" ? image : null,
+  };
+}
+
+function saveUser(user) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  window.dispatchEvent(new Event("sheild-auth-change"));
+}
+
+function redirectTo(callbackUrl) {
+  if (typeof window !== "undefined") {
+    window.location.href = callbackUrl;
+  }
 }
 
 function useAuth() {
-  const callbackUrl = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('callbackUrl')
-    : null;
-
-  const signInWithCredentials = useCallback((options) => {
-    return signIn("credentials-signin", {
-      ...options,
-      callbackUrl: callbackUrl ?? options.callbackUrl
-    });
-  }, [callbackUrl])
-
-  const signUpWithCredentials = useCallback((options) => {
-    return signIn("credentials-signup", {
-      ...options,
-      callbackUrl: callbackUrl ?? options.callbackUrl
-    });
-  }, [callbackUrl])
-
-  const signInWithGoogle = useCallback((options) => {
-    const cb = callbackUrl ?? options?.callbackUrl;
-    if (isDevIframe()) return devSocialShim("google", cb);
-    return signIn("google", { ...options, callbackUrl: cb });
-  }, [callbackUrl]);
-  const signInWithFacebook = useCallback((options) => {
-    const cb = options?.callbackUrl;
-    if (isDevIframe()) return devSocialShim("facebook", cb);
-    return signIn("facebook", options);
+  const signInWithCredentials = useCallback((options = {}) => {
+    const user = buildUser(options);
+    saveUser(user);
+    redirectTo(getCallbackUrl(options));
+    return Promise.resolve({ ok: true, user });
   }, []);
-  const signInWithTwitter = useCallback((options) => {
-    const cb = options?.callbackUrl;
-    if (isDevIframe()) return devSocialShim("twitter", cb);
-    return signIn("twitter", options);
+
+  const signUpWithCredentials = useCallback((options = {}) => {
+    const user = buildUser(options);
+    saveUser(user);
+    redirectTo(getCallbackUrl(options));
+    return Promise.resolve({ ok: true, user });
   }, []);
-  const signInWithApple = useCallback((options) => {
-    const cb = callbackUrl ?? options?.callbackUrl;
-    if (isDevIframe()) return devSocialShim("apple", cb);
-    return signIn("apple", { ...options, callbackUrl: cb });
-  }, [callbackUrl]);
+
+  const signInWithGoogle = useCallback((options = {}) => {
+    const user = buildUser({
+      email: "google.user@sheild.ai",
+      name: "Google User",
+      image: "https://www.google.com/favicon.ico",
+    });
+    saveUser(user);
+    redirectTo(getCallbackUrl(options));
+    return Promise.resolve({ ok: true, user });
+  }, []);
+
+  const signOut = useCallback((options = {}) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.dispatchEvent(new Event("sheild-auth-change"));
+      window.location.href = options.callbackUrl || "/";
+    }
+    return Promise.resolve({ ok: true });
+  }, []);
 
   return {
     signInWithCredentials,
     signUpWithCredentials,
     signInWithGoogle,
-    signInWithFacebook,
-    signInWithTwitter,
-    signInWithApple,
+    signInWithFacebook: signInWithGoogle,
+    signInWithTwitter: signInWithGoogle,
+    signInWithApple: signInWithGoogle,
     signOut,
-  }
+  };
 }
 
+export { STORAGE_KEY };
 export default useAuth;

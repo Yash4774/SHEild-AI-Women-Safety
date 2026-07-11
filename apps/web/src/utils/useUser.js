@@ -1,35 +1,46 @@
-import * as React from 'react';
-import { useSession } from "@auth/create/react";
+import * as React from "react";
+import { STORAGE_KEY } from "@/utils/useAuth";
 
+function readStoredUser() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    window.localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+}
 
 const useUser = () => {
-  const { data: session, status } = useSession();
-  const id = session?.user?.id
-
-  const [user, setUser] = React.useState(session?.user ?? null);
-
-  const fetchUser = React.useCallback(async (session) => {
-  return session?.user;
-}, [])
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
 
   const refetchUser = React.useCallback(() => {
-    if(process.env.NEXT_PUBLIC_CREATE_ENV === "PRODUCTION") {
-      if (id) {
-        fetchUser(session).then(setUser);
-      } else {
-        setUser(null);
-      }
-    }
-  }, [fetchUser, id])
+    setUser(readStoredUser());
+    setLoading(false);
+  }, []);
 
-  React.useEffect(refetchUser, [refetchUser]);
+  React.useEffect(() => {
+    refetchUser();
 
-  if (process.env.NEXT_PUBLIC_CREATE_ENV !== "PRODUCTION") {
-    return { user, data: session?.user || null, loading: status === 'loading', refetch: refetchUser };
-  }
-  return { user, data: user, loading: status === 'loading' || (status === 'authenticated' && !user), refetch: refetchUser };
+    window.addEventListener("storage", refetchUser);
+    window.addEventListener("sheild-auth-change", refetchUser);
+
+    return () => {
+      window.removeEventListener("storage", refetchUser);
+      window.removeEventListener("sheild-auth-change", refetchUser);
+    };
+  }, [refetchUser]);
+
+  return {
+    user,
+    data: user,
+    loading,
+    refetch: refetchUser,
+  };
 };
 
-export { useUser }
-
+export { useUser };
 export default useUser;

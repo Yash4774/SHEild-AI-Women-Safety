@@ -1,8 +1,8 @@
 'use client';
 
-import { signIn } from '@auth/create/react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import useAuth from '@/utils/useAuth';
 
 const isDev = process.env.NEXT_PUBLIC_CREATE_ENV === 'DEVELOPMENT';
 
@@ -15,6 +15,7 @@ const PROVIDER_LABELS = {
 
 export default function SocialDevShimPage() {
 	const navigate = useNavigate();
+	const { signInWithGoogle } = useAuth();
 
 	useEffect(() => {
 		if (!isDev) {
@@ -56,7 +57,7 @@ export default function SocialDevShimPage() {
 		setLoading(true);
 		setError(null);
 		try {
-			await signIn('dev-social', { email, name, provider, callbackUrl });
+			await signInWithGoogle({ email, name, provider, callbackUrl });
 		} catch (err) {
 			setError(
 				err instanceof Error
