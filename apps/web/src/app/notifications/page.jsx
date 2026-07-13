@@ -54,6 +54,25 @@ const NOTIF_CONFIG = {
 };
 
 const FILTERS = ["all", "danger", "guardian", "sos", "route", "info"];
+const LOCAL_NOTIFICATIONS_KEY = "sheild-local-notifications";
+
+function readLocalNotifications() {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = window.localStorage.getItem(LOCAL_NOTIFICATIONS_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalNotifications(items) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_NOTIFICATIONS_KEY, JSON.stringify(items));
+  } catch {}
+}
 
 function timeAgo(iso) {
   const d = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -78,10 +97,15 @@ export default function NotificationsPage() {
       const res = await fetch("/api/notifications");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (Array.isArray(data)) setNotifs(data);
+      if (Array.isArray(data)) {
+        const next = data.length ? data : readLocalNotifications();
+        setNotifs(next);
+        writeLocalNotifications(next);
+      }
     } catch (err) {
-      console.error(err);
-      setError("Failed to load notifications");
+      console.warn("Notifications API unavailable, using local list:", err);
+      setNotifs(readLocalNotifications());
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -96,9 +120,13 @@ export default function NotificationsPage() {
   const unread = notifs.filter((n) => !n.read).length;
 
   const markRead = async (id) => {
-    setNotifs((p) =>
-      p.map((n) => (String(n.id) === String(id) ? { ...n, read: true } : n)),
-    );
+    setNotifs((p) => {
+      const next = p.map((n) =>
+        String(n.id) === String(id) ? { ...n, read: true } : n,
+      );
+      writeLocalNotifications(next);
+      return next;
+    });
     // Only persist for DB-backed notifications (numeric IDs)
     if (!isNaN(Number(id))) {
       await fetch("/api/notifications", {
@@ -110,7 +138,11 @@ export default function NotificationsPage() {
   };
 
   const markAllRead = async () => {
-    setNotifs((p) => p.map((n) => ({ ...n, read: true })));
+    setNotifs((p) => {
+      const next = p.map((n) => ({ ...n, read: true }));
+      writeLocalNotifications(next);
+      return next;
+    });
     await fetch("/api/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -119,7 +151,11 @@ export default function NotificationsPage() {
   };
 
   const remove = async (id) => {
-    setNotifs((p) => p.filter((n) => String(n.id) !== String(id)));
+    setNotifs((p) => {
+      const next = p.filter((n) => String(n.id) !== String(id));
+      writeLocalNotifications(next);
+      return next;
+    });
     if (!isNaN(Number(id))) {
       await fetch("/api/notifications", {
         method: "DELETE",

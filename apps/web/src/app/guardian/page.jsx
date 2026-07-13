@@ -13,7 +13,6 @@ import {
   Phone,
   Mail,
   MessageCircle,
-  Edit3,
   UserPlus,
   AlertTriangle,
 } from "lucide-react";
@@ -29,6 +28,39 @@ const RELATIONSHIPS = [
   "Neighbor",
   "Other",
 ];
+
+const LOCAL_GUARDIANS_KEY = "sheild-local-guardians";
+
+function readLocalGuardians() {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = window.localStorage.getItem(LOCAL_GUARDIANS_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalGuardians(guardians) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_GUARDIANS_KEY, JSON.stringify(guardians));
+  } catch {}
+}
+
+function makeLocalGuardian(form) {
+  return {
+    id: `local-${Date.now()}`,
+    name: form.name.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim(),
+    relationship: form.relationship || "Friend",
+    whatsapp: form.whatsapp.trim(),
+    created_at: new Date().toISOString(),
+    local_only: true,
+  };
+}
 
 function AddGuardianModal({ onClose, onAdded }) {
   const [form, setForm] = useState({
@@ -63,7 +95,9 @@ function AddGuardianModal({ onClose, onAdded }) {
       onAdded(guardian);
       onClose();
     } catch (err) {
-      setError("Failed to add guardian: " + err.message);
+      console.warn("Guardian API unavailable, saving locally:", err);
+      onAdded(makeLocalGuardian(form));
+      onClose();
     } finally {
       setSubmitting(false);
     }
@@ -236,10 +270,15 @@ export default function GuardianPage() {
       const res = await fetch("/api/guardians");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (Array.isArray(data)) setGuardians(data);
+      if (Array.isArray(data)) {
+        const next = data.length ? data : readLocalGuardians();
+        setGuardians(next);
+        writeLocalGuardians(next);
+      }
     } catch (err) {
-      console.error(err);
-      setError("Failed to load guardians");
+      console.warn("Guardian API unavailable, using local contacts:", err);
+      setGuardians(readLocalGuardians());
+      setError(null);
     } finally {
       setLoadingGuardians(false);
     }
@@ -254,11 +293,23 @@ export default function GuardianPage() {
         body: JSON.stringify({ id }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setGuardians((prev) => prev.filter((g) => g.id !== id));
+      setGuardians((prev) => {
+        const next = prev.filter((g) => g.id !== id);
+        writeLocalGuardians(next);
+        return next;
+      });
       setSuccess("Guardian removed.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError("Failed to remove guardian: " + err.message);
+      console.warn("Guardian delete API unavailable, removing locally:", err);
+      setGuardians((prev) => {
+        const next = prev.filter((g) => g.id !== id);
+        writeLocalGuardians(next);
+        return next;
+      });
+      setError(null);
+      setSuccess("Guardian removed locally.");
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -757,7 +808,13 @@ export default function GuardianPage() {
       {showAddModal && (
         <AddGuardianModal
           onClose={() => setShowAddModal(false)}
-          onAdded={(g) => setGuardians((prev) => [g, ...prev])}
+          onAdded={(g) =>
+            setGuardians((prev) => {
+              const next = [g, ...prev];
+              writeLocalGuardians(next);
+              return next;
+            })
+          }
         />
       )}
 

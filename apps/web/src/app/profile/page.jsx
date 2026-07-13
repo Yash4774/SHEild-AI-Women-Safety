@@ -142,8 +142,8 @@ export default function ProfilePage() {
         if (dnaData && dnaData.id) setDna(dnaData);
       })
       .catch((err) => {
-        console.error(err);
-        setError("Failed to load profile data");
+        console.warn("Profile activity APIs unavailable, using defaults:", err);
+        setError(null);
       })
       .finally(() => setLoading(false));
   }, []);

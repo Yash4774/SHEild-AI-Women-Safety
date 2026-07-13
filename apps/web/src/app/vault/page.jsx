@@ -16,6 +16,35 @@ import {
 import AppShell from "@/components/AppShell";
 import useUpload from "@/utils/useUpload";
 
+const LOCAL_EVIDENCE_KEY = "sheild-local-evidence";
+
+function readLocalEvidence() {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = window.localStorage.getItem(LOCAL_EVIDENCE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalEvidence(items) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_EVIDENCE_KEY, JSON.stringify(items));
+  } catch {}
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function VaultPage() {
   const [upload, { loading: uploading }] = useUpload();
   const [evidence, setEvidence] = useState([]);
@@ -62,10 +91,16 @@ export default function VaultPage() {
       const res = await fetch("/api/evidence");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (Array.isArray(data)) setEvidence(data);
+      if (Array.isArray(data)) {
+        const localItems = readLocalEvidence();
+        const next = data.length ? data : localItems;
+        setEvidence(next);
+        writeLocalEvidence(next);
+      }
     } catch (err) {
-      console.error(err);
-      setError("Failed to load vault. Please sign in and try again.");
+      console.warn("Evidence API unavailable, using local vault:", err);
+      setEvidence(readLocalEvidence());
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -91,6 +126,31 @@ export default function VaultPage() {
     return res.json();
   };
 
+  const buildEvidenceRecord = ({ url, type, description }) => {
+    const locationName =
+      cityName ||
+      (gpsPos
+        ? `${gpsPos.lat.toFixed(4)}, ${gpsPos.lng.toFixed(4)}`
+        : "Unknown location");
+    return {
+      id: `local-${Date.now()}`,
+      file_url: url,
+      file_type: type,
+      description,
+      location_name: locationName,
+      created_at: new Date().toISOString(),
+      local_only: true,
+    };
+  };
+
+  const addEvidence = (item) => {
+    setEvidence((prev) => {
+      const next = [item, ...prev];
+      writeLocalEvidence(next);
+      return next;
+    });
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -114,12 +174,33 @@ export default function VaultPage() {
             : "other";
 
       const newItem = await saveToDb({ url, type, description: file.name });
-      setEvidence((prev) => [newItem, ...prev]);
+      addEvidence(newItem);
       setSuccess(`✓ ${file.name} secured in vault`);
       setTimeout(() => setSuccess(null), 4000);
     } catch (err) {
-      console.error("Upload error:", err);
-      setError("Upload failed: " + err.message);
+      console.warn("Secure upload unavailable, saving local evidence:", err);
+      try {
+        setUploadProgress("Saving evidence locally...");
+        const fallbackUrl = await fileToDataUrl(file);
+        const type = file.type?.startsWith("image")
+          ? "image"
+          : file.type?.startsWith("video")
+            ? "video"
+            : "other";
+        addEvidence(
+          buildEvidenceRecord({
+            url: fallbackUrl,
+            type,
+            description: file.name,
+          }),
+        );
+        setError(null);
+        setSuccess(`${file.name} saved locally in vault`);
+        setTimeout(() => setSuccess(null), 4000);
+      } catch (fallbackErr) {
+        console.error("Local evidence save failed:", fallbackErr);
+        setError("Upload failed: " + err.message);
+      }
     } finally {
       setUploadProgress(null);
     }
@@ -158,12 +239,30 @@ export default function VaultPage() {
             type: "audio",
             description: `Audio recording — ${timestamp}`,
           });
-          setEvidence((prev) => [newItem, ...prev]);
+          addEvidence(newItem);
           setSuccess("✓ Audio evidence secured in vault");
           setTimeout(() => setSuccess(null), 4000);
         } catch (err) {
-          console.error("Audio upload error:", err);
-          setError("Failed to save audio: " + err.message);
+          console.warn("Audio upload unavailable, saving locally:", err);
+          try {
+            const fallbackUrl = await fileToDataUrl(file);
+            const timestamp = new Date().toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+            });
+            addEvidence(
+              buildEvidenceRecord({
+                url: fallbackUrl,
+                type: "audio",
+                description: `Audio recording - ${timestamp}`,
+              }),
+            );
+            setError(null);
+            setSuccess("Audio evidence saved locally in vault");
+            setTimeout(() => setSuccess(null), 4000);
+          } catch (fallbackErr) {
+            console.error("Local audio save failed:", fallbackErr);
+            setError("Failed to save audio: " + err.message);
+          }
         } finally {
           setUploadProgress(null);
         }
@@ -194,12 +293,25 @@ export default function VaultPage() {
         body: JSON.stringify({ id: item.id }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setEvidence((prev) => prev.filter((e) => e.id !== item.id));
+      setEvidence((prev) => {
+        const next = prev.filter((e) => e.id !== item.id);
+        writeLocalEvidence(next);
+        return next;
+      });
       if (selected?.id === item.id) setSelected(null);
       setSuccess("Evidence deleted.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError("Delete failed: " + err.message);
+      console.warn("Evidence delete API unavailable, removing locally:", err);
+      setEvidence((prev) => {
+        const next = prev.filter((e) => e.id !== item.id);
+        writeLocalEvidence(next);
+        return next;
+      });
+      if (selected?.id === item.id) setSelected(null);
+      setError(null);
+      setSuccess("Evidence deleted locally.");
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 

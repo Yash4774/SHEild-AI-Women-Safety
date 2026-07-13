@@ -116,8 +116,15 @@ const tree = buildRouteTree(__dirname);
 const apiRoutes = [
 	route('api/ai-chat', './api-fallback/ai-chat.js'),
 	route('api/checkin', './api-fallback/checkin.js'),
+	route('api/evidence', './api-fallback/evidence.js'),
+	route('api/feed', './api-fallback/feed.js'),
+	route('api/guardians', './api-fallback/guardians.js'),
+	route('api/notifications', './api-fallback/notifications.js'),
 	route('api/reports', './api-fallback/reports.js'),
 	route('api/safety-score', './api-fallback/safety-score.js'),
+	route('api/safety-dna', './api-fallback/safety-dna.js'),
+	route('api/sos', './api-fallback/sos.js'),
+	route('api/walk', './api-fallback/walk.js'),
 ];
 const notFound = route('*', './__create/not-found.tsx');
 const routes = [...apiRoutes, ...generateRoutes(tree), notFound];

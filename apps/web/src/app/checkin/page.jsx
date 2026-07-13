@@ -219,6 +219,26 @@ function PlacesInput({ value, onChange, onPlaceSelect, disabled, mapsAvailable }
   );
 }
 
+const LOCAL_CHECKINS_KEY = "sheild-local-checkins";
+
+function readLocalCheckIns() {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = window.localStorage.getItem(LOCAL_CHECKINS_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalCheckIns(items) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_CHECKINS_KEY, JSON.stringify(items));
+  } catch {}
+}
+
 // ── Main Check-In Page ─────────────────────────────────────────────
 function CheckInContent({ mapsAvailable = false }) {
   const [checkIns, setCheckIns] = useState([]);
@@ -244,10 +264,15 @@ function CheckInContent({ mapsAvailable = false }) {
       const res = await fetch("/api/checkin");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (Array.isArray(data)) setCheckIns(data);
+      if (Array.isArray(data)) {
+        const next = data.length ? data : readLocalCheckIns();
+        setCheckIns(next);
+        writeLocalCheckIns(next);
+      }
     } catch (err) {
-      console.error(err);
-      setError("Failed to load check-ins");
+      console.warn("Check-in API unavailable, using local check-ins:", err);
+      setCheckIns(readLocalCheckIns());
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -288,7 +313,11 @@ function CheckInContent({ mapsAvailable = false }) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const newCheckIn = await res.json();
-      setCheckIns((prev) => [newCheckIn, ...prev]);
+      setCheckIns((prev) => {
+        const next = [newCheckIn, ...prev];
+        writeLocalCheckIns(next);
+        return next;
+      });
       resetForm();
       setShowForm(false);
       setSuccess(
@@ -296,8 +325,28 @@ function CheckInContent({ mapsAvailable = false }) {
       );
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
-      console.error(err);
-      setError("Failed to schedule check-in: " + err.message);
+      console.warn("Check-in API unavailable, scheduling locally:", err);
+      const newCheckIn = {
+        id: `local-${Date.now()}`,
+        destination: selectedPlace?.name || form.destination,
+        scheduled_arrival: form.scheduled_arrival,
+        emergency_contact: form.emergency_contact,
+        status: "pending",
+        dest_lat: selectedPlace?.lat || null,
+        dest_lng: selectedPlace?.lng || null,
+        dest_address: selectedPlace?.address || form.destination,
+        created_at: new Date().toISOString(),
+      };
+      setCheckIns((prev) => {
+        const next = [newCheckIn, ...prev];
+        writeLocalCheckIns(next);
+        return next;
+      });
+      resetForm();
+      setShowForm(false);
+      setError(null);
+      setSuccess("Check-in scheduled locally.");
+      setTimeout(() => setSuccess(null), 5000);
     } finally {
       setSubmitting(false);
     }
@@ -311,15 +360,29 @@ function CheckInContent({ mapsAvailable = false }) {
         body: JSON.stringify({ id, status: "arrived" }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setCheckIns((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status: "arrived" } : c)),
-      );
+      setCheckIns((prev) => {
+        const next = prev.map((c) =>
+          c.id === id ? { ...c, status: "arrived" } : c,
+        );
+        writeLocalCheckIns(next);
+        return next;
+      });
       setSuccess(
         "✓ Arrival confirmed! Your contacts have been notified you're safe.",
       );
       setTimeout(() => setSuccess(null), 4000);
     } catch (err) {
-      setError("Failed to confirm arrival: " + err.message);
+      console.warn("Check-in update API unavailable, confirming locally:", err);
+      setCheckIns((prev) => {
+        const next = prev.map((c) =>
+          c.id === id ? { ...c, status: "arrived" } : c,
+        );
+        writeLocalCheckIns(next);
+        return next;
+      });
+      setError(null);
+      setSuccess("Arrival confirmed locally.");
+      setTimeout(() => setSuccess(null), 4000);
     }
   };
 
