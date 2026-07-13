@@ -24,6 +24,64 @@ Guidelines:
 - Provide specific, actionable steps — not generic advice
 - When in Hindi, use clear modern Hindi (not overly formal)`;
 
+function buildLocalSafetyReply(messages) {
+  const lastUserMsg = (messages || []).filter((m) => m.role === "user").pop();
+  const text = String(lastUserMsg?.content || "").toLowerCase();
+  const emergency =
+    text.includes("follow") ||
+    text.includes("unsafe") ||
+    text.includes("danger") ||
+    text.includes("stalk") ||
+    text.includes("harass") ||
+    text.includes("emergency");
+  const route =
+    text.includes("route") ||
+    text.includes("travel") ||
+    text.includes("night") ||
+    text.includes("destination");
+
+  if (emergency) {
+    return [
+      "I can help. If you are in immediate danger, call 112 now and move toward people, lights, or an open shop/security desk.",
+      "",
+      "- Do not go home if someone may be following you.",
+      "- Call a trusted contact and keep them on the line.",
+      "- Change direction toward a busy public place.",
+      "- If possible, share live location from your phone.",
+      "- Note appearance, vehicle number, direction, and time only if it is safe.",
+      "- Use the SOS hub in SHEild AI if you need to alert guardians quickly.",
+      "",
+      "If you tell me what is happening and where you are, I will guide you step by step.",
+    ].join("\n");
+  }
+
+  if (route) {
+    return [
+      "For a safer route, prioritize visibility, people, and quick access to help.",
+      "",
+      "- Use the Safe Route page and enter your destination.",
+      "- Prefer main roads, metro/bus corridors, hospitals, markets, and well-lit streets.",
+      "- Avoid isolated shortcuts, parks, alleys, construction areas, and empty service roads at night.",
+      "- Share your route and ETA with a guardian before leaving.",
+      "- Keep your phone charged and emergency contacts ready.",
+      "- If the safety score is low, switch transport mode, wait, or travel with someone.",
+      "",
+      "This is the local safety fallback because the live AI provider is not configured.",
+    ].join("\n");
+  }
+
+  return [
+    "I am here for safety guidance. The live AI provider is not configured, so I am using SHEild AI's local safety fallback.",
+    "",
+    "- For emergencies in India, call 112 first.",
+    "- Share live location with a trusted contact.",
+    "- Move toward a staffed, well-lit, public place if you feel unsafe.",
+    "- Use Safe Route for route checks and SOS for urgent alerts.",
+    "",
+    "Ask about the situation, route, guardian setup, or emergency steps and I will help.",
+  ].join("\n");
+}
+
 export async function POST(request) {
   try {
     let session = null;
@@ -133,10 +191,7 @@ export async function POST(request) {
     }
 
     if (!aiResponse) {
-      return Response.json(
-        { error: "AI assistant is not configured. Add GEMINI_API_KEY in Vercel." },
-        { status: 503 },
-      );
+      aiResponse = buildLocalSafetyReply(messages);
     }
 
     // Save chat message to DB if user is logged in

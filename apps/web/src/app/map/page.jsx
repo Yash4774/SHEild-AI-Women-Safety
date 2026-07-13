@@ -34,6 +34,7 @@ function getIST() {
 
 export default function MapPage() {
   const { data: user } = useUser();
+  const mapsApiKey = import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   const [center, setCenter] = useState({ lat: 28.6139, lng: 77.209 }); // New Delhi default
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -276,9 +277,8 @@ export default function MapPage() {
         <div className="flex flex-1 overflow-hidden">
           {/* Map */}
           <div className="flex-1 relative">
-            <APIProvider
-              apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
-            >
+            {mapsApiKey ? (
+            <APIProvider apiKey={mapsApiKey}>
               <Map
                 style={{ width: "100%", height: "100%" }}
                 defaultCenter={center}
@@ -338,6 +338,26 @@ export default function MapPage() {
                 )}
               </Map>
             </APIProvider>
+            ) : (
+              <div className="h-full w-full bg-[#08080f] flex items-center justify-center p-6">
+                <div className="max-w-md text-center">
+                  <MapPin size={44} className="text-violet-400 mx-auto mb-4" />
+                  <h3 className="text-white font-black text-lg mb-2">
+                    Safety map is ready
+                  </h3>
+                  <p className="text-gray-400 text-sm leading-6 mb-5">
+                    Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable the live Google
+                    map. Reports and AI safety scoring still work without it.
+                  </p>
+                  <button
+                    onClick={() => handleMapClick({ detail: { latLng: center } })}
+                    className="px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm"
+                  >
+                    Analyze Current Area
+                  </button>
+                </div>
+              </div>
+            )}
             {loadingScore && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl bg-[#08080f]/90 backdrop-blur-xl border border-white/10 text-sm text-gray-300 flex items-center gap-3">
                 <div

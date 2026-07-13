@@ -194,6 +194,7 @@ function AddGuardianModal({ onClose, onAdded }) {
 
 export default function GuardianPage() {
   const { data: user } = useUser();
+  const mapsApiKey = import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   const [guardians, setGuardians] = useState([]);
   const [loadingGuardians, setLoadingGuardians] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -673,10 +674,8 @@ export default function GuardianPage() {
               className="lg:col-span-2 rounded-2xl overflow-hidden border border-white/5"
               style={{ height: "480px" }}
             >
-              {currentPos ? (
-                <APIProvider
-                  apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
-                >
+              {currentPos && mapsApiKey ? (
+                <APIProvider apiKey={mapsApiKey}>
                   <Map
                     style={{ width: "100%", height: "100%" }}
                     center={currentPos}
@@ -695,8 +694,15 @@ export default function GuardianPage() {
                   <div className="text-center">
                     <MapPin size={40} className="text-gray-600 mx-auto mb-3" />
                     <p className="text-gray-500 text-sm">
-                      Enable location to see your position on the map
+                      {currentPos
+                        ? "Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable the live map"
+                        : "Enable location to see your position on the map"}
                     </p>
+                    {currentPos && (
+                      <p className="text-gray-600 text-xs mt-2">
+                        {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

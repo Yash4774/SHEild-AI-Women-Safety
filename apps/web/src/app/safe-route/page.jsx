@@ -40,8 +40,47 @@ function MapsProvider({ apiKey, children }) {
   );
 }
 
+function DestinationInput({ value, onChange, onSelect, placeholder, mapsEnabled }) {
+  if (mapsEnabled) {
+    return (
+      <MapsDestinationInput
+        value={value}
+        onChange={onChange}
+        onSelect={onSelect}
+        placeholder={placeholder}
+      />
+    );
+  }
+
+  return (
+    <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && value.trim()) {
+            onSelect(value.trim());
+          }
+        }}
+        placeholder={placeholder}
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          padding: "8px 12px",
+          fontSize: 12,
+          color: "var(--text1)",
+          outline: "none",
+        }}
+      />
+    </div>
+  );
+}
+
 // Places autocomplete
-function DestinationInput({ value, onChange, onSelect, placeholder }) {
+function MapsDestinationInput({ value, onChange, onSelect, placeholder }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const svcRef = useRef(null);
@@ -392,6 +431,7 @@ export default function SafeRoutePage() {
               value={destInput}
               onChange={setDestInput}
               onSelect={setDestConfirmed}
+              mapsEnabled={Boolean(mapsApiKey)}
               placeholder="Search destination (address, landmark, city…)"
             />
 

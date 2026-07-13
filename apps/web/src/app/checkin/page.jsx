@@ -17,7 +17,7 @@ import AppShell from "@/components/AppShell";
 
 // ── Google Places Autocomplete Input ──────────────────────────────
 // Uses window.google loaded by APIProvider
-function PlacesInput({ value, onChange, onPlaceSelect, disabled }) {
+function PlacesInput({ value, onChange, onPlaceSelect, disabled, mapsAvailable }) {
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -30,6 +30,7 @@ function PlacesInput({ value, onChange, onPlaceSelect, disabled }) {
   useEffect(() => {
     let tries = 0;
     const init = () => {
+      if (!mapsAvailable) return;
       if (typeof window !== "undefined" && window.google?.maps?.places) {
         svcRef.current = new window.google.maps.places.AutocompleteService();
       } else if (tries < 30) {
@@ -38,7 +39,7 @@ function PlacesInput({ value, onChange, onPlaceSelect, disabled }) {
       }
     };
     init();
-  }, []);
+  }, [mapsAvailable]);
 
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.length < 2 || !svcRef.current) {
@@ -115,7 +116,11 @@ function PlacesInput({ value, onChange, onPlaceSelect, disabled }) {
           onFocus={() => inputVal.length > 1 && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           disabled={disabled}
-          placeholder="Search for a real location or address…"
+          placeholder={
+            mapsAvailable
+              ? "Search for a real location or address…"
+              : "Enter destination or address"
+          }
           className="w-full bg-white/5 border rounded-xl py-3 text-sm text-white outline-none placeholder-gray-600"
           style={{
             padding: "12px 14px 12px 38px",
@@ -195,7 +200,7 @@ function PlacesInput({ value, onChange, onPlaceSelect, disabled }) {
         </div>
       )}
 
-      {!validated && inputVal.length > 0 && !showSuggestions && (
+      {mapsAvailable && !validated && inputVal.length > 0 && !showSuggestions && (
         <div
           style={{
             fontSize: 10,
@@ -215,7 +220,7 @@ function PlacesInput({ value, onChange, onPlaceSelect, disabled }) {
 }
 
 // ── Main Check-In Page ─────────────────────────────────────────────
-function CheckInContent() {
+function CheckInContent({ mapsAvailable = false }) {
   const [checkIns, setCheckIns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -259,8 +264,8 @@ function CheckInContent() {
       setError("Please fill in all required fields.");
       return;
     }
-    // Require a valid place to be selected from autocomplete
-    if (!selectedPlace) {
+    // Require a verified place only when Google Places is available.
+    if (mapsAvailable && !selectedPlace) {
       setError(
         "Please select a valid location from the suggestions. Free-text destinations are not accepted.",
       );
@@ -273,12 +278,12 @@ function CheckInContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          destination: selectedPlace.name,
+          destination: selectedPlace?.name || form.destination,
           scheduled_arrival: form.scheduled_arrival,
           emergency_contact: form.emergency_contact,
-          dest_lat: selectedPlace.lat,
-          dest_lng: selectedPlace.lng,
-          dest_address: selectedPlace.address,
+          dest_lat: selectedPlace?.lat || null,
+          dest_lng: selectedPlace?.lng || null,
+          dest_address: selectedPlace?.address || form.destination,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -546,7 +551,13 @@ function CheckInContent() {
                       setForm((p) => ({ ...p, destination: place.name }));
                     }}
                     disabled={submitting}
+                    mapsAvailable={mapsAvailable}
                   />
+                  {!mapsAvailable && (
+                    <div className="mt-2 text-[11px] text-amber-400">
+                      Google Places is not configured, so free-text destinations are allowed.
+                    </div>
+                  )}
                   {selectedPlace && (
                     <div className="mt-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 flex items-start gap-2">
                       <MapPin size={10} className="mt-0.5 flex-shrink-0" />
@@ -619,7 +630,7 @@ function CheckInContent() {
                       submitting ||
                       !form.destination ||
                       !form.scheduled_arrival ||
-                      !selectedPlace
+                      (mapsAvailable && !selectedPlace)
                     }
                     className="flex-1 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm transition-all active:scale-95 disabled:opacity-50"
                   >
@@ -641,12 +652,18 @@ function CheckInContent() {
 }
 
 export default function CheckInPage() {
+  const mapsApiKey = import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+  if (!mapsApiKey) {
+    return <CheckInContent mapsAvailable={false} />;
+  }
+
   return (
     <APIProvider
-      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
+      apiKey={mapsApiKey}
       libraries={["places"]}
     >
-      <CheckInContent />
+      <CheckInContent mapsAvailable={true} />
     </APIProvider>
   );
 }

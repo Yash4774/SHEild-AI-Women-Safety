@@ -44,16 +44,6 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-    // Require that coordinates are provided (i.e. a real place was selected)
-    if (!dest_lat || !dest_lng) {
-      return Response.json(
-        {
-          error:
-            "Please select a valid location from the map autocomplete. Free-text destinations are not accepted.",
-        },
-        { status: 400 },
-      );
-    }
     const rows = await sql`
       INSERT INTO check_ins (user_id, destination, scheduled_arrival, emergency_contact, status, dest_lat, dest_lng, dest_address)
       VALUES (
@@ -62,8 +52,8 @@ export async function POST(request) {
         ${scheduled_arrival},
         ${emergency_contact || ""},
         'pending',
-        ${dest_lat},
-        ${dest_lng},
+        ${dest_lat || null},
+        ${dest_lng || null},
         ${dest_address || ""}
       )
       RETURNING *
