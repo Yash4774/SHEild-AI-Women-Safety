@@ -218,3 +218,10 @@ export async function POST(request) {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function action({ request }) {
+  if (request.method !== "POST") {
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
+  }
+  return POST(request);
+}

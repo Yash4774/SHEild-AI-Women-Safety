@@ -206,3 +206,10 @@ export async function POST(request) {
     return Response.json(buildFallback(""));
   }
 }
+
+export async function action({ request }) {
+  if (request.method !== "POST") {
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
+  }
+  return POST(request);
+}

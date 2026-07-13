@@ -91,3 +91,16 @@ export async function PATCH(request) {
     );
   }
 }
+
+export async function loader({ request }) {
+  if (request.method !== "GET") {
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
+  }
+  return GET(request);
+}
+
+export async function action({ request }) {
+  if (request.method === "POST") return POST(request);
+  if (request.method === "PATCH") return PATCH(request);
+  return Response.json({ error: "Method not allowed" }, { status: 405 });
+}

@@ -571,23 +571,38 @@ export default function SafeRoutePage() {
                   style={{
                     width: "100%",
                     height: "100%",
-                    display: "grid",
-                    placeItems: "center",
-                    padding: 24,
+                    position: "relative",
                     boxSizing: "border-box",
-                    background:
-                      "radial-gradient(circle at center, rgba(124,58,237,.16), transparent 55%), var(--bg2)",
+                    background: "var(--bg2)",
                   }}
                 >
-                  <div style={{ maxWidth: 440, textAlign: "center" }}>
-                    <Map size={42} color="#a78bfa" style={{ margin: "0 auto 12px" }} />
+                  <iframe
+                    title="Route map"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentPos.lng - 0.03}%2C${currentPos.lat - 0.02}%2C${currentPos.lng + 0.03}%2C${currentPos.lat + 0.02}&layer=mapnik&marker=${currentPos.lat}%2C${currentPos.lng}`}
+                    style={{ width: "100%", height: "100%", border: 0, opacity: 0.78 }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 24,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      maxWidth: 460,
+                      textAlign: "center",
+                      padding: "16px 18px",
+                      borderRadius: 16,
+                      background: "rgba(8,8,15,0.88)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(16px)",
+                    }}
+                  >
+                    <Map size={34} color="#a78bfa" style={{ margin: "0 auto 10px" }} />
                     <div style={{ color: t1, fontWeight: 800, fontSize: 18 }}>
-                      Route planning is ready
+                      Route planning active
                     </div>
                     <p style={{ color: t2, fontSize: 13, lineHeight: 1.6 }}>
-                      Enter any destination to get a safety score. Add
-                      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in Vercel to enable the
-                      interactive map and turn-by-turn route preview.
+                      Enter any destination to get a safety score. Map preview
+                      uses OpenStreetMap, and directions open in Google Maps.
                     </p>
                     {activeRoute && (
                       <a

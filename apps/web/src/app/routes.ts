@@ -113,7 +113,13 @@ if (import.meta.env.DEV) {
 	}
 }
 const tree = buildRouteTree(__dirname);
+const apiRoutes = [
+	route('api/ai-chat', './api-fallback/ai-chat.js'),
+	route('api/checkin', './api-fallback/checkin.js'),
+	route('api/reports', './api-fallback/reports.js'),
+	route('api/safety-score', './api-fallback/safety-score.js'),
+];
 const notFound = route('*', './__create/not-found.tsx');
-const routes = [...generateRoutes(tree), notFound];
+const routes = [...apiRoutes, ...generateRoutes(tree), notFound];
 
 export default routes;
