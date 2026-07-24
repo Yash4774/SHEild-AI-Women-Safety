@@ -1,0 +1,4 @@
+build/
+.vercel/
+node_modules/
+.env
