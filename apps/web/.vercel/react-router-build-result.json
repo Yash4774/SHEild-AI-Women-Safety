@@ -10,6 +10,17 @@
       }
     },
     "routeIdToServerBundleId": {
+      "api-fallback/ai-chat": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/checkin": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/evidence": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/feed": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/guardians": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/notifications": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/reports": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/safety-score": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/safety-dna": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/sos": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "api-fallback/walk": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "account/logout/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "account/signin/page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -49,6 +60,105 @@
         "file": "src/app/root.tsx",
         "path": "",
         "config": {}
+      },
+      "api-fallback/ai-chat": {
+        "id": "api-fallback/ai-chat",
+        "parentId": "root",
+        "file": "src/app/api-fallback/ai-chat.js",
+        "path": "api/ai-chat",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/checkin": {
+        "id": "api-fallback/checkin",
+        "parentId": "root",
+        "file": "src/app/api-fallback/checkin.js",
+        "path": "api/checkin",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/evidence": {
+        "id": "api-fallback/evidence",
+        "parentId": "root",
+        "file": "src/app/api-fallback/evidence.js",
+        "path": "api/evidence",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/feed": {
+        "id": "api-fallback/feed",
+        "parentId": "root",
+        "file": "src/app/api-fallback/feed.js",
+        "path": "api/feed",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/guardians": {
+        "id": "api-fallback/guardians",
+        "parentId": "root",
+        "file": "src/app/api-fallback/guardians.js",
+        "path": "api/guardians",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/notifications": {
+        "id": "api-fallback/notifications",
+        "parentId": "root",
+        "file": "src/app/api-fallback/notifications.js",
+        "path": "api/notifications",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/reports": {
+        "id": "api-fallback/reports",
+        "parentId": "root",
+        "file": "src/app/api-fallback/reports.js",
+        "path": "api/reports",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/safety-score": {
+        "id": "api-fallback/safety-score",
+        "parentId": "root",
+        "file": "src/app/api-fallback/safety-score.js",
+        "path": "api/safety-score",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/safety-dna": {
+        "id": "api-fallback/safety-dna",
+        "parentId": "root",
+        "file": "src/app/api-fallback/safety-dna.js",
+        "path": "api/safety-dna",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/sos": {
+        "id": "api-fallback/sos",
+        "parentId": "root",
+        "file": "src/app/api-fallback/sos.js",
+        "path": "api/sos",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "api-fallback/walk": {
+        "id": "api-fallback/walk",
+        "parentId": "root",
+        "file": "src/app/api-fallback/walk.js",
+        "path": "api/walk",
+        "config": {
+          "runtime": "nodejs"
+        }
       },
       "page": {
         "id": "page",
@@ -359,6 +469,72 @@
         "file": "root.tsx",
         "path": ""
       },
+      "api-fallback/ai-chat": {
+        "id": "api-fallback/ai-chat",
+        "parentId": "root",
+        "file": "./api-fallback/ai-chat.js",
+        "path": "api/ai-chat"
+      },
+      "api-fallback/checkin": {
+        "id": "api-fallback/checkin",
+        "parentId": "root",
+        "file": "./api-fallback/checkin.js",
+        "path": "api/checkin"
+      },
+      "api-fallback/evidence": {
+        "id": "api-fallback/evidence",
+        "parentId": "root",
+        "file": "./api-fallback/evidence.js",
+        "path": "api/evidence"
+      },
+      "api-fallback/feed": {
+        "id": "api-fallback/feed",
+        "parentId": "root",
+        "file": "./api-fallback/feed.js",
+        "path": "api/feed"
+      },
+      "api-fallback/guardians": {
+        "id": "api-fallback/guardians",
+        "parentId": "root",
+        "file": "./api-fallback/guardians.js",
+        "path": "api/guardians"
+      },
+      "api-fallback/notifications": {
+        "id": "api-fallback/notifications",
+        "parentId": "root",
+        "file": "./api-fallback/notifications.js",
+        "path": "api/notifications"
+      },
+      "api-fallback/reports": {
+        "id": "api-fallback/reports",
+        "parentId": "root",
+        "file": "./api-fallback/reports.js",
+        "path": "api/reports"
+      },
+      "api-fallback/safety-score": {
+        "id": "api-fallback/safety-score",
+        "parentId": "root",
+        "file": "./api-fallback/safety-score.js",
+        "path": "api/safety-score"
+      },
+      "api-fallback/safety-dna": {
+        "id": "api-fallback/safety-dna",
+        "parentId": "root",
+        "file": "./api-fallback/safety-dna.js",
+        "path": "api/safety-dna"
+      },
+      "api-fallback/sos": {
+        "id": "api-fallback/sos",
+        "parentId": "root",
+        "file": "./api-fallback/sos.js",
+        "path": "api/sos"
+      },
+      "api-fallback/walk": {
+        "id": "api-fallback/walk",
+        "parentId": "root",
+        "file": "./api-fallback/walk.js",
+        "path": "api/walk"
+      },
       "page": {
         "id": "page",
         "parentId": "root",
@@ -567,6 +743,50 @@
         "path": "",
         "file": "root.tsx",
         "children": [
+          {
+            "file": "./api-fallback/ai-chat.js",
+            "path": "api/ai-chat"
+          },
+          {
+            "file": "./api-fallback/checkin.js",
+            "path": "api/checkin"
+          },
+          {
+            "file": "./api-fallback/evidence.js",
+            "path": "api/evidence"
+          },
+          {
+            "file": "./api-fallback/feed.js",
+            "path": "api/feed"
+          },
+          {
+            "file": "./api-fallback/guardians.js",
+            "path": "api/guardians"
+          },
+          {
+            "file": "./api-fallback/notifications.js",
+            "path": "api/notifications"
+          },
+          {
+            "file": "./api-fallback/reports.js",
+            "path": "api/reports"
+          },
+          {
+            "file": "./api-fallback/safety-score.js",
+            "path": "api/safety-score"
+          },
+          {
+            "file": "./api-fallback/safety-dna.js",
+            "path": "api/safety-dna"
+          },
+          {
+            "file": "./api-fallback/sos.js",
+            "path": "api/sos"
+          },
+          {
+            "file": "./api-fallback/walk.js",
+            "path": "api/walk"
+          },
           {
             "file": "./page.jsx",
             "index": true
